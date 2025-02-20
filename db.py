@@ -2,6 +2,8 @@ from pymongo import MongoClient
 import bcrypt
 from dotenv import load_dotenv
 load_dotenv()
+import os
+
 MONGO_URI = os.getenv("MONGO_URI")
 
 # Connect to MongoDB Atlas
