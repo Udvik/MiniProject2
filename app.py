@@ -22,9 +22,13 @@ if choice == "Login":
             st.session_state["logged_in"] = True
             st.session_state["username"] = username
             st.session_state["preferences"] = user["preferences"]
-            st.success(f"Welcome, {username}! Your preferences: {', '.join(user['preferences'])}")
+            st.success(f"Welcome, {username}! Redirecting...")
+        
+        # Redirect to home page
+            st.switch_page("pages/home.py")
         else:
             st.error("Invalid username or password")
+
 
 elif choice == "Register":
     st.subheader("Register New User")
