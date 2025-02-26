@@ -1,14 +1,22 @@
 import streamlit as st
 from db import register_user, login_user
 
-# Session state to track login status
+# Initialize session state variables
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
     st.session_state["username"] = ""
     st.session_state["preferences"] = []
+if "current_page" not in st.session_state:
+    st.session_state["current_page"] = "Login"  # Default to Login
+
+
 
 menu = ["Login", "Register"]
-choice = st.sidebar.selectbox("Menu", menu)
+choice = st.sidebar.selectbox("Menu", menu, index=menu.index(st.session_state["current_page"]))
+
+
+
+
 
 if choice == "Login":
     st.subheader("Login Page")
@@ -23,8 +31,6 @@ if choice == "Login":
             st.session_state["username"] = username
             st.session_state["preferences"] = user["preferences"]
             st.success(f"Welcome, {username}! Redirecting...")
-        
-        # Redirect to home page
             st.switch_page("pages/home.py")
         else:
             st.error("Invalid username or password")
@@ -41,9 +47,15 @@ elif choice == "Register":
 
     if st.button("Register"):
         if register_user(new_username, new_password, preferences):
-            st.success("Registration successful! Please log in.")
+            st.success("Registration successful! Redirecting to Login...")
+            
+            # Switch to login page
+            st.session_state["current_page"] = "Login"
+            st.switch_page("app.py")  # Redirects back to login page
         else:
             st.error("Username already exists. Try a different one.")
+
+
 
 # Logout Button
 if st.session_state["logged_in"]:
