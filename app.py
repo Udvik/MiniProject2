@@ -43,7 +43,7 @@ elif choice == "Register":
         if register_user(new_username, new_password, preferences):
             st.success("Registration successful! Please log in.")
         else:
-            st.error("Username already exists. Try a different one.")
+            st.error("Username already exists")
 
 # Logout Button
 if st.session_state["logged_in"]:
