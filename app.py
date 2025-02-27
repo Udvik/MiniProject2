@@ -1,7 +1,7 @@
 import streamlit as st
 from db import register_user, login_user
 
-# Session state to track login status
+
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
     st.session_state["username"] = ""
@@ -23,8 +23,7 @@ if choice == "Login":
             st.session_state["username"] = username
             st.session_state["preferences"] = user["preferences"]
             st.success(f"Welcome, {username}! Redirecting...")
-        
-        # Redirect to home page
+       
             st.switch_page("pages/home.py")
         else:
             st.error("Invalid username or password")
@@ -45,7 +44,7 @@ elif choice == "Register":
         else:
             st.error("Username already exists")
 
-# Logout Button
+
 if st.session_state["logged_in"]:
     if st.button("Logout"):
         st.session_state["logged_in"] = False
