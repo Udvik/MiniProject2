@@ -1,6 +1,3 @@
-#This is First Branch
-
-
 from pymongo import MongoClient
 import bcrypt
 from dotenv import load_dotenv
