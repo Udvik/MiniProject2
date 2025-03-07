@@ -31,20 +31,23 @@ st.write("Browse Popular Movies or Search for Any Movie")
 # Search Bar
 query = st.text_input("🔍 Search for a movie...")
 
-# If user enters a search query
-if query:
-    movies = search_movies(query)
-else:
-    movies = fetch_popular_movies()
+# Fetch movies
+movies = search_movies(query) if query else fetch_popular_movies()
 
-# Display Movies
-cols = st.columns(4)  # Create 4 columns per row
+# Display Movies as Clickable Cards
+cols = st.columns(4)  # 4 columns per row
 
 for i, movie in enumerate(movies):
-    if movie.get("poster_path"):  # Ensure poster exists
-        with cols[i % 4]:  # Arrange in columns
-            st.image(
-                f"https://image.tmdb.org/t/p/w500{movie['poster_path']}", 
-                use_container_width=True  # ✅ Updated parameter
-            )
-            st.caption(movie["title"])  # Show title under poster
+    with cols[i % 4]:  # Arrange in columns
+        movie_id = movie["id"]
+        poster_path = movie["poster_path"]
+        movie_title = movie["title"]
+
+        # Show Movie Poster
+        if poster_path:
+            st.image(f"https://image.tmdb.org/t/p/w500{poster_path}", use_container_width=True)
+        
+        # Clickable Movie Title
+        st.link_button(movie_title, f"/movie_details?movie_id={movie_id}")
+
+
