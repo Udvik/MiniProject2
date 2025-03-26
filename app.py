@@ -65,7 +65,22 @@ with st.sidebar:
         )
 
 # Handle navigation
+# [Keep all your existing imports and CSS code exactly the same]
+
+# Initialize session state with persistent flag
+if "logged_in" not in st.session_state:
+    st.session_state.update({
+        "logged_in": False,
+        "username": "",
+        "preferences": [],
+        "_last_page": "home"  # Track last page for session persistence
+    })
+
+# [Keep all your existing menu code exactly the same until navigation handling]
+
+
 if menu_choice == "Home" and st.session_state["logged_in"]:
+    st.session_state["_last_page"] = "home"
     st.switch_page("pages/home.py")
     
 elif menu_choice == "Login":
@@ -76,13 +91,14 @@ elif menu_choice == "Login":
     if st.button("Login"):
         user = login_user(username, password)
         if user:
-            st.session_state["logged_in"] = True
-            st.session_state["username"] = username
-            st.session_state["preferences"] = user["preferences"]
-            st.success(f"Welcome, {username}! Redirecting...")
+            st.session_state.update({
+                "logged_in": True,
+                "username": username,
+                "preferences": user["preferences"],
+                "_last_page": "home"
+            })
             st.switch_page("pages/home.py")
-        else:
-            st.error("Invalid username or password")
+
 
 elif menu_choice == "Register":
     st.subheader("Register New User")

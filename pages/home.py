@@ -3,8 +3,25 @@ import requests
 import os
 
 
+# Add this at the top of home.py (right after imports)
 st.markdown("""
 <style>
+    /* Main content padding */
+    .main .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        padding-left: 5rem;
+        padding-right: 5rem;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+        .main .block-container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+    }
+    
     .stCaption {
         font-size: 14px !important;
         text-align: center !important;

@@ -34,3 +34,13 @@ def login_user(username, password):
     if user and bcrypt.checkpw(password.encode('utf-8'), user["password"]):
         return {"username": user["username"], "preferences": user.get("preferences", [])} 
     return None
+def get_user_data(username):
+    """Fetch user data from MongoDB"""
+    user = users_collection.find_one({"username": username})
+    if user:
+        return {
+            "email": user.get("email", "Not provided"),
+            "join_date": str(user.get("join_date", "Unknown")),
+            "preferences": user.get("preferences", [])
+        }
+    return {}

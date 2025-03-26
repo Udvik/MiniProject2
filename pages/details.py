@@ -58,3 +58,9 @@ for idx, (code, name) in enumerate(allowed_countries.items()):
                 st.write(provider["provider_name"])
         else:
             st.write("❌ Not available")
+
+
+if st.button("← Back"):
+    # Preserve session state
+    st.session_state["logged_in"] = True  # Force maintain login
+    st.switch_page("pages/home.py") 
