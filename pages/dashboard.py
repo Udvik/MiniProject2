@@ -37,8 +37,8 @@ with col1:
 with col2:
     st.markdown(f"""
     - **Username:** {username}
-    - **Email:** Coming soon
-    - **Member since:** Coming soon
+    - **Email:** not available
+    - **Member since:** not available
     """)
 
 st.markdown("---")
