@@ -32,11 +32,11 @@ st.subheader("Overview")
 st.write(details.get("overview", "No description available."))
 
 if media_type == "movie":
-    st.markdown(f"**Release Date:** 📅 {details.get('release_date')}")
+    st.markdown(f"*Release Date:* 📅 {details.get('release_date')}")
 else:
-    st.markdown(f"**First Air Date:** 📅 {details.get('first_air_date')}")
+    st.markdown(f"*First Air Date:* 📅 {details.get('first_air_date')}")
 
-st.markdown(f"**Rating:** ⭐ {details.get('vote_average', 'N/A')}/10")
+st.markdown(f"*Rating:* ⭐ {details.get('vote_average', 'N/A')}/10")
 
 # Watch Providers (same as before)
 st.subheader("Where to Watch")
@@ -50,7 +50,7 @@ allowed_countries = {
 cols = st.columns(len(allowed_countries))
 for idx, (code, name) in enumerate(allowed_countries.items()):
     with cols[idx]:
-        st.markdown(f"**{name}**")
+        st.markdown(f"{name}")
         if providers.get(code, {}).get("flatrate"):
             for provider in providers[code]["flatrate"]:
                 st.image(f"https://image.tmdb.org/t/p/w500{provider['logo_path']}", 
@@ -63,4 +63,4 @@ for idx, (code, name) in enumerate(allowed_countries.items()):
 if st.button("← Back"):
     # Preserve session state
     st.session_state["logged_in"] = True  # Force maintain login
-    st.switch_page("pages/home.py") 
+    st.switch_page("pages/home.py")
