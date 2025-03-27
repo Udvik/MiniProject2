@@ -18,13 +18,14 @@ TMDB_MOVIES_URL = "https://api.themoviedb.org/3/discover/movie"
 
 # Mood-to-Genre Mapping
 MOOD_TO_GENRE = {
-    "joy": ["Comedy", "Adventure", "Animation"],
-    "sadness": ["Drama", "Romance"],
-    "anger": ["Action", "Thriller"],
-    "fear": ["Horror", "Mystery"],
-    "surprise": ["Science Fiction", "Fantasy"],
-    "neutral": ["Documentary", "History"],
+    "joy": ["Documentary", "History"],    
+    "sadness": ["Comedy", "Adventure", "Animation"],   
+    "anger": ["Drama", "Romance"],  
+    "fear": ["Comedy", "Drama"],  
+    "surprise": ["Action", "Thriller"],   
+    "neutral": ["Science Fiction", "Fantasy"],    
 }
+
 
 # Fetch TMDB Genre Mapping
 @st.cache_data
@@ -66,10 +67,17 @@ if user_input:
 
         if movies:
             st.subheader("🎥 Recommended Movies")
-            for movie in movies[:5]:  # Show top 5 movies
-                st.write(f"📌 {movie['title']} ({movie.get('release_date', 'N/A')[:4]})")
-                if movie.get("poster_path"):
-                    st.image(f"https://image.tmdb.org/t/p/w500{movie['poster_path']}", width=150)
+            
+            cols = st.columns(5)  # Display 5 movies per row
+            for idx, movie in enumerate(movies[:15]):  # Show top 15 movies
+                title = movie.get("title", "Unknown")
+                poster_path = movie.get("poster_path", "")
+                movie_id = movie.get("id")
+                poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else "https://via.placeholder.com/180x270"
+                
+                with cols[idx % 5]:
+                    st.image(poster_url, width=150)
+                    st.write(title)
         else:
             st.write("❌ Sorry, no recommendations found.")
     else:
