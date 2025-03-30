@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import os
-
+from db import add_watched_content, add_liked_content  # Import the database functions
 
 # Add this at the top of home.py (right after imports)
 st.markdown("""
@@ -30,6 +30,32 @@ st.markdown("""
     img:hover {
         opacity: 0.9;
         transition: opacity 0.2s;
+    }
+    
+    /* New styles for watched/liked buttons */
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .action-btn {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        cursor: pointer;
+        border: none;
+        transition: all 0.3s;
+    }
+    .action-btn:hover {
+        transform: translateY(-2px);
+    }
+    .watched-btn {
+        background-color: #4CAF50;
+        color: white;
+    }
+    .liked-btn {
+        background-color: #f44336;
+        color: white;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -61,8 +87,31 @@ def display_content(items, media_type):
                     unsafe_allow_html=True
                 )
             
+            # Add Watched/Liked buttons below each item
+            if st.session_state.get("logged_in", False):
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("✅", key=f"watched_{item_id}"):
+                        add_watched_content(
+                            st.session_state.username,
+                            media_type,
+                            item_id,
+                            title
+                        )
+                        st.success(f"Added {title} to watched list!")
+                with col2:
+                    if st.button("❤️", key=f"liked_{item_id}"):
+                        add_liked_content(
+                            st.session_state.username,
+                            media_type,
+                            item_id,
+                            title
+                        )
+                        st.success(f"Added {title} to liked list!")
+            
             st.caption(title)
 
+# Rest of your existing functions remain exactly the same...
 def fetch_popular_movies():
     API_KEY = os.getenv("TMDB_API_KEY")
     url = f"https://api.themoviedb.org/3/movie/popular?api_key={API_KEY}"
@@ -84,8 +133,19 @@ def search_content(query):
 
 # --- Streamlit UI Code AFTER functions ---
 st.title("🎬 Entertainment Explorer")
+
+# Add quick action buttons below title
+# if st.session_state.get("logged_in", False):
+#     st.markdown("""
+#     <div class="action-buttons">
+#         <button class="action-btn watched-btn" onclick="window.location.href='/dashboard?tab=watched'">My Watched</button>
+#         <button class="action-btn liked-btn" onclick="window.location.href='/dashboard?tab=liked'">My Liked</button>
+#     </div>
+#     """, unsafe_allow_html=True)
+
 query = st.text_input("🔍 Search for movies or TV shows...")
 
+# Rest of your existing UI code remains exactly the same...
 if query:
     results = search_content(query)
     movies = [r for r in results if r.get("media_type") == "movie"]

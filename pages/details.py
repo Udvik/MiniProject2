@@ -1,6 +1,18 @@
 import streamlit as st
 import requests
 import os
+from db import add_watched_content, add_liked_content
+
+
+
+# Initialize session state if not exists
+if 'logged_in' not in st.session_state:
+    st.session_state.update({
+        'logged_in': False,
+        'username': '',
+        'preferences': []
+    })
+
 
 API_KEY = os.getenv("TMDB_API_KEY")
 
@@ -38,7 +50,7 @@ else:
 
 st.markdown(f"**Rating:** ⭐ {details.get('vote_average', 'N/A')}/10")
 
-# Watch Providers (same as before)
+# Watch Providers
 st.subheader("Where to Watch")
 allowed_countries = {
     "IN": "🇮🇳 India",
@@ -59,8 +71,34 @@ for idx, (code, name) in enumerate(allowed_countries.items()):
         else:
             st.write("❌ Not available")
 
+# Watched/Liked Buttons
+st.markdown("---")
+col1, col2 = st.columns(2)
+with col1:
+    if st.button("✅ Mark as Watched"):
+        if st.session_state.logged_in:
+            add_watched_content(
+                st.session_state.username,
+                media_type,
+                item_id,
+                details.get("title") or details.get("name")
+            )
+            st.success("Added to watched list!")
+        else:
+            st.error("Please login first")
+
+with col2:
+    if st.button("❤️ Add to Liked"):
+        if st.session_state.logged_in:
+            add_liked_content(
+                st.session_state.username,
+                media_type,
+                item_id,
+                details.get("title") or details.get("name")
+            )
+            st.success("Added to liked list!")
+        else:
+            st.error("Please login first")
 
 if st.button("← Back"):
-    # Preserve session state
-    st.session_state["logged_in"] = True  # Force maintain login
-    st.switch_page("pages/home.py") 
+    st.switch_page("pages/home.py")
