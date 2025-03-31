@@ -3,8 +3,6 @@ import requests
 import os
 from db import add_watched_content, add_liked_content
 
-
-
 # Initialize session state if not exists
 if 'logged_in' not in st.session_state:
     st.session_state.update({
@@ -12,7 +10,6 @@ if 'logged_in' not in st.session_state:
         'username': '',
         'preferences': []
     })
-
 
 API_KEY = os.getenv("TMDB_API_KEY")
 
@@ -25,6 +22,11 @@ def fetch_details(media_type, item_id):
     
     return details, providers.get("results", {})
 
+def get_external_ids(media_type, item_id):
+    url = f"https://api.themoviedb.org/3/{media_type}/{item_id}/external_ids"
+    response = requests.get(url, params={"api_key": API_KEY})
+    return response.json() if response.status_code == 200 else {}
+
 # Get parameters
 media_type = st.query_params.get("media_type")
 item_id = st.query_params.get("id")
@@ -34,6 +36,7 @@ if not media_type or not item_id:
     st.stop()
 
 details, providers = fetch_details(media_type, item_id)
+external_ids = get_external_ids(media_type, item_id)
 
 # Display Details
 st.title(details.get("title") or details.get("name"))
@@ -72,33 +75,54 @@ for idx, (code, name) in enumerate(allowed_countries.items()):
             st.write("❌ Not available")
 
 # Watched/Liked Buttons
-st.markdown("---")
-col1, col2 = st.columns(2)
-with col1:
-    if st.button("✅ Mark as Watched"):
-        if st.session_state.logged_in:
-            add_watched_content(
-                st.session_state.username,
-                media_type,
-                item_id,
-                details.get("title") or details.get("name")
-            )
-            st.success("Added to watched list!")
-        else:
-            st.error("Please login first")
+# st.markdown("---")
+# col1, col2 = st.columns(2)
+# with col1:
+#     if st.button("✅ Mark as Watched"):
+#         if st.session_state.logged_in:
+#             add_watched_content(
+#                 st.session_state.username,
+#                 media_type,
+#                 item_id,
+#                 details.get("title") or details.get("name")
+#             )
+#             st.success("Added to watched list!")
+#         else:
+#             st.error("Please login first")
 
-with col2:
-    if st.button("❤️ Add to Liked"):
-        if st.session_state.logged_in:
-            add_liked_content(
-                st.session_state.username,
-                media_type,
-                item_id,
-                details.get("title") or details.get("name")
-            )
-            st.success("Added to liked list!")
-        else:
-            st.error("Please login first")
+# with col2:
+#     if st.button("❤️ Add to Liked"):
+#         if st.session_state.logged_in:
+#             add_liked_content(
+#                 st.session_state.username,
+#                 media_type,
+#                 item_id,
+#                 details.get("title") or details.get("name")
+#             )
+#             st.success("Added to liked list!")
+#         else:
+#             st.error("Please login first")
+
+# More Details Section
+st.markdown("---")
+st.subheader("View more Details")
+
+# TMDb Link (always available)
+tmdb_url = f"https://www.themoviedb.org/{media_type}/{item_id}"
+st.markdown(f"**TMDb:** [View on TMDb ↗]({tmdb_url})")
+
+# IMDb Link (if available)
+if external_ids.get("imdb_id"):
+    imdb_url = f"https://www.imdb.com/title/{external_ids['imdb_id']}/"
+    st.markdown(f"**IMDb:** [View on IMDb ↗]({imdb_url})")
+else:
+    st.markdown("**IMDb:** Not available")
+
+# Letterboxd Link (only for movies)
+if media_type == "movie":
+    title_slug = details.get("title", "").lower().replace(" ", "-")
+    letterboxd_url = f"https://letterboxd.com/tmdb/{item_id}"
+    st.markdown(f"**Letterboxd:** [View on Letterboxd ↗]({letterboxd_url})")
 
 if st.button("← Back"):
     st.switch_page("pages/home.py")

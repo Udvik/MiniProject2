@@ -70,6 +70,7 @@ def display_content(items, media_type):
             item_id = item.get("id")
             
             # Container with minimal spacing
+
             if poster_path and item_id:
                 poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
                 details_url = f"/details?media_type={media_type}&id={item_id}"
