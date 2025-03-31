@@ -48,17 +48,28 @@ def get_user_data(username):
         }
     return {}
 
+# In db.py, modify these functions:
 def add_watched_content(username, media_type, item_id, title):
     users_collection.update_one(
         {"username": username},
-        {"$addToSet": {"watched": {"id": item_id, "type": media_type, "title": title}}},
+        {"$addToSet": {"watched": {
+            "id": item_id, 
+            "type": media_type, 
+            "title": title,
+            "added_at": datetime.now().isoformat()  
+        }}},
         upsert=True
     )
 
 def add_liked_content(username, media_type, item_id, title):
     users_collection.update_one(
         {"username": username},
-        {"$addToSet": {"liked": {"id": item_id, "type": media_type, "title": title}}},
+        {"$addToSet": {"liked": {
+            "id": item_id, 
+            "type": media_type, 
+            "title": title,
+            "added_at": datetime.now().isoformat()   
+        }}},
         upsert=True
     )
 
