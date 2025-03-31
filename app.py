@@ -56,21 +56,6 @@ st.markdown("""
         justify-content: left !important;
         padding: 8px 16px !important;
     }
-    /* Global padding for all pages */
-    .main .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-        padding-left: 5rem;
-        padding-right: 5rem;
-    }
-    
-    /* Mobile responsiveness */
-    @media (max-width: 768px) {
-        .main .block-container {
-            padding-left: 1rem;
-            padding-right: 1rem;
-        }
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -82,7 +67,8 @@ if "logged_in" not in st.session_state:
         "preferences": [],
         "_last_page": "home",
         "_session_id": str(time.time()),
-        "_pending_details": None
+        "_pending_details": None,
+        "_current_friend": None  # Added for friend view
     })
 
 # Custom sidebar menu
@@ -90,10 +76,13 @@ with st.sidebar:
     st.title("Menu")
     
     if st.session_state.logged_in:
+        menu_options = ["Home", "Dashboard", "Friends", "Recommendations", "Logout"]
+        menu_icons = ["house", "speedometer2", "people", "chat-square-heart", "box-arrow-right"]
+        
         menu_choice = option_menu(
             menu_title=None,
-            options=["Home", "Dashboard", "Logout"],
-            icons=["house", "speedometer2", "box-arrow-right"],
+            options=menu_options,
+            icons=menu_icons,
             default_index=0,
             styles={
                 "container": {"padding": "0!important"},
@@ -129,6 +118,14 @@ elif menu_choice == "Dashboard":
     st.session_state._last_page = "dashboard"
     st.session_state._pending_details = None
     st.switch_page("pages/dashboard.py")
+elif menu_choice == "Friends":
+    st.session_state._last_page = "friends"
+    st.session_state._pending_details = None
+    st.switch_page("pages/friends.py")
+elif menu_choice == "Recommendations":
+    st.session_state._last_page = "recommendations"
+    st.session_state._pending_details = None
+    st.switch_page("pages/recommendations.py")
 elif menu_choice == "Login":
     st.subheader("Login Page")
     username = st.text_input("Username")
@@ -177,7 +174,8 @@ elif menu_choice == "Logout":
         "username": "",
         "preferences": [],
         "_session_id": None,
-        "_pending_details": None
+        "_pending_details": None,
+        "_current_friend": None
     })
     # Clear the localStorage login state
     st.markdown("""

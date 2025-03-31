@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import os
-from db import add_watched_content, add_liked_content  # Import the database functions
+from db import add_watched_content, add_liked_content
 
 # Add this at the top of home.py (right after imports)
 st.markdown("""
@@ -30,6 +30,7 @@ st.markdown("""
     img:hover {
         opacity: 0.9;
         transition: opacity 0.2s;
+        cursor: pointer;
     }
     
     /* New styles for watched/liked buttons */
@@ -57,6 +58,12 @@ st.markdown("""
         background-color: #f44336;
         color: white;
     }
+    
+    /* Poster container styles */
+    .poster-container {
+        position: relative;
+        margin-bottom: 8px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -69,14 +76,19 @@ def display_content(items, media_type):
             title = (item.get("title") or item.get("name"))[:20] + "..." if len(item.get("title") or item.get("name")) > 20 else (item.get("title") or item.get("name"))
             item_id = item.get("id")
             
-            # Container with minimal spacing
-
             if poster_path and item_id:
                 poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}"
                 details_url = f"/details?media_type={media_type}&id={item_id}"
                 st.markdown(
-                    f'<a href="{details_url}" target="_self" style="display:block; margin-bottom:8px;">'
-                    f'<img src="{poster_url}" style="width:100%; height:auto; aspect-ratio:2/3; object-fit:cover; border-radius:8px;"></a>',
+                    f'''
+                    <div class="poster-container">
+                        <a href="{details_url}" target="_blank">
+                            <img src="{poster_url}" 
+                                 style="width:100%; height:auto; aspect-ratio:2/3; object-fit:cover; border-radius:8px;"
+                                 alt="{title}">
+                        </a>
+                    </div>
+                    ''',
                     unsafe_allow_html=True
                 )
             else:
@@ -92,7 +104,7 @@ def display_content(items, media_type):
             if st.session_state.get("logged_in", False):
                 col1, col2 = st.columns(2)
                 with col1:
-                    if st.button("✅", key=f"watched_{item_id}"):
+                    if st.button("✅", key=f"watched_{item_id}_{i}"):
                         add_watched_content(
                             st.session_state.username,
                             media_type,
@@ -101,7 +113,7 @@ def display_content(items, media_type):
                         )
                         st.success(f"Added {title} to watched list!")
                 with col2:
-                    if st.button("❤️", key=f"liked_{item_id}"):
+                    if st.button("❤️", key=f"liked_{item_id}_{i}"):
                         add_liked_content(
                             st.session_state.username,
                             media_type,
@@ -135,18 +147,8 @@ def search_content(query):
 # --- Streamlit UI Code AFTER functions ---
 st.title("🎬 Entertainment Explorer")
 
-# Add quick action buttons below title
-# if st.session_state.get("logged_in", False):
-#     st.markdown("""
-#     <div class="action-buttons">
-#         <button class="action-btn watched-btn" onclick="window.location.href='/dashboard?tab=watched'">My Watched</button>
-#         <button class="action-btn liked-btn" onclick="window.location.href='/dashboard?tab=liked'">My Liked</button>
-#     </div>
-#     """, unsafe_allow_html=True)
-
 query = st.text_input("🔍 Search for movies or TV shows...")
 
-# Rest of your existing UI code remains exactly the same...
 if query:
     results = search_content(query)
     movies = [r for r in results if r.get("media_type") == "movie"]

@@ -1,19 +1,29 @@
 import streamlit as st
 import requests
 import os
-from db import get_user_content
+from db import (
+    get_user_content, 
+    send_friend_request, 
+    get_friend_requests,
+    respond_friend_request,
+    get_friends,
+    add_recommendation,
+    get_recommendations,
+    remove_recommendation
+)
 
-# Set page config FIRST (must be first Streamlit command)
+# Set page config
 st.set_page_config(page_title="Dashboard", layout="wide")
 
 # TMDB API Configuration
 API_KEY = os.getenv("TMDB_API_KEY")
 TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
-# Add padding CSS to match home page
+# CSS Styling (keep your existing styles)
 st.markdown("""
 <style>
-    .main {
+    /* Your existing CSS styles here */
+        .main {
         padding-left: 2rem !important;
         padding-right: 2rem !important;
     }
@@ -82,25 +92,112 @@ with col2:
     - **Username:** {username}
     - **Favorite Genres:** {', '.join(st.session_state.preferences) if st.session_state.preferences else 'Not specified'}
     """)
+
 if st.button("Logout", key="dashboard_logout"):
-        st.session_state.update({
-            "logged_in": False,
-            "username": "",
-            "preferences": [],
-            "_session_id": None,
-            "_pending_details": None
-        })
-        st.markdown("""
-        <script>
-        localStorage.removeItem('streamlit_login');
-        localStorage.removeItem('streamlit_username');
-        window.location.href = '/';
-        </script>
-        """, unsafe_allow_html=True)
+    st.session_state.update({
+        "logged_in": False,
+        "username": "",
+        "preferences": [],
+        "_session_id": None,
+        "_pending_details": None
+    })
+    st.markdown("""
+    <script>
+    localStorage.removeItem('streamlit_login');
+    localStorage.removeItem('streamlit_username');
+    window.location.href = '/';
+    </script>
+    """, unsafe_allow_html=True)
 
+# Friend System Section
 st.markdown("---")
+st.markdown("## 🤝 Friends")
 
-# Watched Content Section
+# Friend Requests
+st.markdown("### Friend Requests")
+friend_requests = get_friend_requests(username)
+if friend_requests:
+    for req in friend_requests:
+        if req["to_user"] == username:  # Incoming requests
+            col1, col2, col3 = st.columns([3, 1, 1])
+            with col1:
+                st.write(f"Friend request from: {req['from_user']}")
+            with col2:
+                if st.button("Accept", key=f"accept_{req['_id']}"):
+                    respond_friend_request(req["_id"], "accept")
+                    st.rerun()
+            with col3:
+                if st.button("Reject", key=f"reject_{req['_id']}"):
+                    respond_friend_request(req["_id"], "reject")
+                    st.rerun()
+else:
+    st.info("No pending friend requests")
+
+# Add Friend
+st.markdown("### Add Friend")
+new_friend = st.text_input("Enter username to add as friend")
+if st.button("Send Friend Request"):
+    if send_friend_request(username, new_friend):
+        st.success(f"Friend request sent to {new_friend}")
+    else:
+        st.error("Could not send friend request")
+
+# Friends List
+st.markdown("### Your Friends")
+friends = get_friends(username)
+if friends:
+    for friend in friends:
+        st.write(friend)
+else:
+    st.info("You haven't added any friends yet")
+
+# Recommendations Section
+st.markdown("---")
+st.markdown("## 💌 Recommendations")
+
+# Received Recommendations
+st.markdown("### Recommendations for You")
+recommendations = get_recommendations(username)
+if recommendations:
+    cols = st.columns(4)
+    for idx, rec in enumerate(recommendations[:4]):
+        with cols[idx % 4]:
+            poster_path = fetch_poster(rec["media_type"], rec["item_id"])
+            if poster_path:
+                st.image(
+                    f"{TMDB_IMAGE_BASE_URL}{poster_path}",
+                    width=150,
+                    caption=f"{rec['title']} (from {rec['from_user']})"
+                )
+            else:
+                st.image(
+                    "https://via.placeholder.com/150x225?text=No+Poster",
+                    width=150,
+                    caption=f"{rec['title']} (from {rec['from_user']})"
+                )
+            if st.button("Remove", key=f"remove_rec_{rec['_id']}"):
+                remove_recommendation(rec["_id"])
+                st.rerun()
+else:
+    st.info("No recommendations for you yet")
+
+# Send Recommendation (only if you have friends)
+if friends:
+    st.markdown("### Send Recommendation")
+    friend_to_rec = st.selectbox("Select friend", friends)
+    media_type = st.selectbox("Media Type", ["movie", "tv"])
+    item_id = st.text_input("Item ID")
+    title = st.text_input("Title")
+    note = st.text_area("Note (optional)")
+    
+    if st.button("Send Recommendation"):
+        if add_recommendation(username, friend_to_rec, media_type, item_id, title, note):
+            st.success("Recommendation sent!")
+        else:
+            st.error("Could not send recommendation")
+
+# Existing Watched/Liked Content Sections (keep your existing code)
+st.markdown("---")
 st.markdown("## 🎬 Your Watched Content")
 watched_content = get_user_content(username)["watched"]
 if watched_content:
@@ -128,9 +225,8 @@ else:
     st.info("You haven't watched anything yet")
 
 st.markdown("---")
-
-# Liked Content Section
 st.markdown("## ❤️ Your Liked Content")
+# ... (keep your existing liked content code)
 liked_content = get_user_content(username)["liked"]
 if liked_content:
     cols = st.columns(4)

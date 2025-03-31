@@ -103,9 +103,14 @@ for idx, (code, name) in enumerate(allowed_countries.items()):
 #         else:
 #             st.error("Please login first")
 
+
+
+st.subheader("Item ID : ")
+st.subheader(item_id)
 # More Details Section
 st.markdown("---")
 st.subheader("View more Details")
+
 
 # TMDb Link (always available)
 tmdb_url = f"https://www.themoviedb.org/{media_type}/{item_id}"
@@ -124,5 +129,21 @@ if media_type == "movie":
     letterboxd_url = f"https://letterboxd.com/tmdb/{item_id}"
     st.markdown(f"**Letterboxd:** [View on Letterboxd ↗]({letterboxd_url})")
 
-if st.button("← Back"):
-    st.switch_page("pages/home.py")
+if st.button("← Close Tab"):
+    st.markdown("""
+    <div style="background:#f8f9fa;color:#000;padding:1rem;border-radius:0.5rem;margin-top:1rem;">
+        <h4 style="color:#333;">📌 How to close this tab:</h4>
+        <p><strong>Windows/Linux:</strong> Press Ctrl+W</p>
+        <p><strong>Mac:</strong> Press ⌘+W</p>
+        <p>Or click the X on the browser tab</p>
+    </div>
+    <script>
+    // Small delay to ensure Streamlit renders the message first
+    setTimeout(() => {
+        // Try to close for users who came via window.open()
+        if(window.opener && !window.opener.closed) {
+            window.close();
+        }
+    }, 300);
+    </script>
+    """, unsafe_allow_html=True)
