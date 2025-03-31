@@ -1,5 +1,6 @@
 import streamlit as st
 from db import get_user_content, add_recommendation
+#Checking Changes
 
 # Set page config
 st.set_page_config(page_title="Friend Profile", layout="wide")
