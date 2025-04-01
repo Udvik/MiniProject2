@@ -2,8 +2,8 @@ import streamlit as st
 import requests
 import os
 from db import (
-    get_user_content, 
-    send_friend_request, 
+    get_user_content,
+    send_friend_request,
     get_friend_requests,
     respond_friend_request,
     get_friends,
@@ -56,7 +56,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def fetch_poster(media_type, item_id):
-    API_KEY = os.getenv("TMDB_API_KEY")
     url = f"https://api.themoviedb.org/3/{media_type}/{item_id}"
     response = requests.get(url, params={"api_key": API_KEY})
     if response.status_code == 200:
@@ -196,10 +195,14 @@ if friends:
         else:
             st.error("Could not send recommendation")
 
-# Existing Watched/Liked Content Sections (keep your existing code)
+# Watched Content Section
 st.markdown("---")
 st.markdown("## 🎬 Your Watched Content")
 watched_content = get_user_content(username)["watched"]
+
+# Loop through the watched content in reverse order (most recent first)
+watched_content.reverse()
+
 if watched_content:
     cols = st.columns(4)
     for idx, item in enumerate(watched_content[:4]):
@@ -224,10 +227,14 @@ if watched_content:
 else:
     st.info("You haven't watched anything yet")
 
+# Liked Content Section (Similar logic applies here)
 st.markdown("---")
 st.markdown("## ❤️ Your Liked Content")
-# ... (keep your existing liked content code)
 liked_content = get_user_content(username)["liked"]
+
+# Loop through the liked content in reverse order (most recent first)
+liked_content.reverse()
+
 if liked_content:
     cols = st.columns(4)
     for idx, item in enumerate(liked_content[:4]):
@@ -251,6 +258,3 @@ if liked_content:
             st.switch_page("pages/list_content.py")
 else:
     st.info("You haven't liked anything yet")
-
-if st.button("← Back to Home"):
-    st.switch_page("pages/home.py")
