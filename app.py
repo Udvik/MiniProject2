@@ -21,11 +21,16 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Button styles */
+    /* Default button styles */
     .stButton>button {
         width: 100% !important;
-        justify-content: left !important;
         padding: 8px 16px !important;
+    }
+
+    /* Special class for centered buttons */
+    .centered-button .stButton>button {
+        display: flex;
+        justify-content: center;
     }
 
     /* Main content padding - applied globally */
@@ -51,11 +56,6 @@ st.markdown("""
     .st-emotion-cache-16txtl3 {
         padding: 1rem !important;
     }
-    .stButton>button {
-        width: 100% !important;
-        justify-content: left !important;
-        padding: 8px 16px !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -68,7 +68,7 @@ if "logged_in" not in st.session_state:
         "_last_page": "home",
         "_session_id": str(time.time()),
         "_pending_details": None,
-        "_current_friend": None  # Added for friend view
+        "_current_friend": None
     })
 
 # Custom sidebar menu
@@ -131,20 +131,24 @@ elif menu_choice == "Login":
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
     
-    if st.button("Login"):
-        user = login_user(username, password)
-        if user:
-            st.session_state.update({
-                "logged_in": True,
-                "username": username,
-                "preferences": user["preferences"],
-                "_session_id": str(time.time())
-            })
-            
-            if st.session_state._pending_details:
-                st.switch_page(f"pages/details.py?media_type={st.session_state._pending_details['media_type']}&id={st.session_state._pending_details['id']}")
-            else:
-                st.switch_page("pages/home.py")
+    # Create a container with our centered-button class
+    with st.container():
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
+            if st.button("Login"):
+                user = login_user(username, password)
+                if user:
+                    st.session_state.update({
+                        "logged_in": True,
+                        "username": username,
+                        "preferences": user["preferences"],
+                        "_session_id": str(time.time())
+                    })
+                    
+                    if st.session_state._pending_details:
+                        st.switch_page(f"pages/details.py?media_type={st.session_state._pending_details['media_type']}&id={st.session_state._pending_details['id']}")
+                    else:
+                        st.switch_page("pages/home.py")
 elif menu_choice == "Register":
     st.subheader("Register New User")
     new_username = st.text_input("New Username", key="reg_username")
@@ -157,17 +161,21 @@ elif menu_choice == "Register":
         key="reg_preferences"
     )
 
-    if st.button("Register"):
-        if not new_username or not new_password:
-            st.error("Username and password are required")
-        elif len(new_password) < 6:
-            st.error("Password must be at least 6 characters")
-        elif not preferences:
-            st.error("Please select at least one favorite genre")
-        elif register_user(new_username, new_password, preferences):
-            st.success("Registration successful! Please log in.")
-        else:
-            st.error("Username already exists")
+    # Create a container with our centered-button class
+    with st.container():
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
+            if st.button("Register"):
+                if not new_username or not new_password:
+                    st.error("Username and password are required")
+                elif len(new_password) < 6:
+                    st.error("Password must be at least 6 characters")
+                elif not preferences:
+                    st.error("Please select at least one favorite genre")
+                elif register_user(new_username, new_password, preferences):
+                    st.success("Registration successful! Please log in.")
+                else:
+                    st.error("Username already exists")
 elif menu_choice == "Logout":
     st.session_state.update({
         "logged_in": False,
@@ -177,23 +185,20 @@ elif menu_choice == "Logout":
         "_pending_details": None,
         "_current_friend": None
     })
-    # Clear the localStorage login state
     st.markdown("""
     <script>
     localStorage.removeItem('streamlit_login');
     localStorage.removeItem('streamlit_username');
     </script>
     """, unsafe_allow_html=True)
-    # Redirect to login page
     st.switch_page("app.py")
 
-# Add this at the BOTTOM of app.py for session persistence
+# Session persistence code
 if not st.session_state.logged_in and st.query_params.get("logged_in") == "True":
     st.session_state.logged_in = True
     st.session_state.username = st.query_params.get("username", "")
     st.rerun()
 
-# Store login state in localStorage for persistence
 st.markdown("""
 <script>
 if (window.location.search.includes('logged_in=True')) {
