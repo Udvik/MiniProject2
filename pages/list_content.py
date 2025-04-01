@@ -1,12 +1,12 @@
 import streamlit as st
-from db import get_user_content  # Make sure you have the necessary functions
+from db import get_user_content
 import requests
 import os
 
 # Set page config FIRST
 st.set_page_config(layout="wide")
 
-# Add the padding CSS (keep your existing padding solution)
+# Add the padding CSS
 st.markdown("""
 <style>
     [data-testid="stAppViewContainer"] > .main {
@@ -28,10 +28,9 @@ def fetch_poster(media_type, item_id):
         return response.json().get("poster_path")
     return None
 
-# Add this new function to handle removal
 def remove_content(username, content_type, item_id):
     """Remove item from watched or liked list"""
-    from db import users_collection  # Import your collection
+    from db import users_collection
     
     update_result = users_collection.update_one(
         {"username": username},
@@ -54,8 +53,8 @@ if not content:
     st.info(f"You haven't {content_type} anything yet")
 else:
     cols = st.columns(4)
-    for i, item in enumerate(content):
-        with cols[i % 4]:
+    for idx, item in enumerate(content):  # Using enumerate to get unique index
+        with cols[idx % 4]:
             poster_path = fetch_poster(item["type"], item["id"])
             title = item["title"]
             
@@ -72,8 +71,9 @@ else:
                     caption=title
                 )
             
-            # Add removal button
-            if st.button(f"Remove from {content_type}", key=f"remove_{item['id']}"):
+            # Modified button with unique key using index
+            if st.button(f"Remove from {content_type}", 
+                        key=f"remove_{content_type}_{item['id']}_{idx}"):  # Added index to key
                 if remove_content(st.session_state.username, content_type, item["id"]):
                     st.success(f"Removed {title} from your {content_type} list!")
                     st.rerun()

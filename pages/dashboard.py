@@ -199,7 +199,10 @@ if friends:
 # Existing Watched/Liked Content Sections (keep your existing code)
 st.markdown("---")
 st.markdown("## 🎬 Your Watched Content")
-watched_content = get_user_content(username)["watched"]
+watched_content = get_user_content(username).get("watched", [])
+
+watched_content.reverse()
+
 if watched_content:
     cols = st.columns(4)
     for idx, item in enumerate(watched_content[:4]):
@@ -226,8 +229,11 @@ else:
 
 st.markdown("---")
 st.markdown("## ❤️ Your Liked Content")
-# ... (keep your existing liked content code)
-liked_content = get_user_content(username)["liked"]
+
+liked_content = get_user_content(username).get("liked", [])
+
+liked_content.reverse()
+
 if liked_content:
     cols = st.columns(4)
     for idx, item in enumerate(liked_content[:4]):
