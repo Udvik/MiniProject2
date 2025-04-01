@@ -5,6 +5,7 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 import emoji
+from db import add_watched_content, add_liked_content  # Assuming this is the database handler
 
 # Load API Key from .env
 load_dotenv()
@@ -39,8 +40,6 @@ EMOJI_TO_GENRE_TV = {
     ("❤️", "💔", "🥰"): ["Romance", "Drama"],  # Love & heartbreak themes
     ("🎶"): ["Music", "Reality"],  # Music and dance-themed TV shows
 }
-
-
 
 # Fetch TMDB Genre Mapping
 @st.cache_data
@@ -105,10 +104,35 @@ if selected_emoji:
                 title = movie.get("title", "Unknown")
                 poster_path = movie.get("poster_path", "")
                 poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else "https://via.placeholder.com/180x270"
+                item_id = movie.get("id")
                 
                 with cols[idx % 5]:
-                    st.image(poster_url, width=150)
+                    # Making the image a clickable link
+                    details_url = f"/details?media_type=movie&id={item_id}"
+                    st.markdown(f"[![{title}]({poster_url})]({details_url})", unsafe_allow_html=True)  # This will make the poster clickable
                     st.write(title)
+
+                    # Add Watched and Liked buttons
+                    if st.session_state.get("logged_in", False):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("✅", key=f"watched_{item_id}_{idx}"):
+                                add_watched_content(
+                                    st.session_state.username,
+                                    "movie",
+                                    item_id,
+                                    title
+                                )
+                                st.success(f"Added {title} to watched list!")
+                        with col2:
+                            if st.button("❤️", key=f"liked_{item_id}_{idx}"):
+                                add_liked_content(
+                                    st.session_state.username,
+                                    "movie",
+                                    item_id,
+                                    title
+                                )
+                                st.success(f"Added {title} to liked list!")
 
             # Show TV Shows Section
             st.subheader("📺 Recommended TV Shows")
@@ -117,10 +141,35 @@ if selected_emoji:
                 title = tv_show.get("name", "Unknown")
                 poster_path = tv_show.get("poster_path", "")
                 poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else "https://via.placeholder.com/180x270"
+                item_id = tv_show.get("id")
                 
                 with cols[idx % 5]:
-                    st.image(poster_url, width=150)
+                    # Making the image a clickable link
+                    details_url = f"/details?media_type=tv&id={item_id}"
+                    st.markdown(f"[![{title}]({poster_url})]({details_url})", unsafe_allow_html=True)  # This will make the poster clickable
                     st.write(title)
+
+                    # Add Watched and Liked buttons
+                    if st.session_state.get("logged_in", False):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("✅", key=f"watched_{item_id}_{idx}"):
+                                add_watched_content(
+                                    st.session_state.username,
+                                    "tv",
+                                    item_id,
+                                    title
+                                )
+                                st.success(f"Added {title} to watched list!")
+                        with col2:
+                            if st.button("❤️", key=f"liked_{item_id}_{idx}"):
+                                add_liked_content(
+                                    st.session_state.username,
+                                    "tv",
+                                    item_id,
+                                    title
+                                )
+                                st.success(f"Added {title} to liked list!")
 
         else:
             st.write("❌ Sorry, no recommendations found.")
