@@ -2,8 +2,8 @@ import streamlit as st
 import requests
 import os
 from db import (
-    get_user_content,
-    send_friend_request,
+    get_user_content, 
+    send_friend_request, 
     get_friend_requests,
     respond_friend_request,
     get_friends,
@@ -56,6 +56,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def fetch_poster(media_type, item_id):
+    API_KEY = os.getenv("TMDB_API_KEY")
     url = f"https://api.themoviedb.org/3/{media_type}/{item_id}"
     response = requests.get(url, params={"api_key": API_KEY})
     if response.status_code == 200:
@@ -195,12 +196,11 @@ if friends:
         else:
             st.error("Could not send recommendation")
 
-# Watched Content Section
+# Existing Watched/Liked Content Sections (keep your existing code)
 st.markdown("---")
 st.markdown("## 🎬 Your Watched Content")
 watched_content = get_user_content(username).get("watched", [])
 
-# Loop through the watched content in reverse order (most recent first)
 watched_content.reverse()
 
 if watched_content:
@@ -227,12 +227,11 @@ if watched_content:
 else:
     st.info("You haven't watched anything yet")
 
-# Liked Content Section
 st.markdown("---")
 st.markdown("## ❤️ Your Liked Content")
+
 liked_content = get_user_content(username).get("liked", [])
 
-# Loop through the liked content in reverse order (most recent first)
 liked_content.reverse()
 
 if liked_content:
@@ -259,3 +258,5 @@ if liked_content:
 else:
     st.info("You haven't liked anything yet")
 
+if st.button("← Back to Home"):
+    st.switch_page("pages/home.py")
