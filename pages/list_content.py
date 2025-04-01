@@ -17,6 +17,17 @@ st.markdown("""
             padding: 2rem 1rem !important;
         }
     }
+    .poster-container {
+        position: relative;
+        margin-bottom: 8px;
+    }
+    .poster-container img {
+        transition: transform 0.2s;
+    }
+    .poster-container img:hover {
+        transform: scale(1.03);
+        cursor: pointer;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -53,27 +64,37 @@ if not content:
     st.info(f"You haven't {content_type} anything yet")
 else:
     cols = st.columns(4)
-    for idx, item in enumerate(content):  # Using enumerate to get unique index
+    for idx, item in enumerate(content):
         with cols[idx % 4]:
             poster_path = fetch_poster(item["type"], item["id"])
             title = item["title"]
+            details_url = f"/details?media_type={item['type']}&id={item['id']}"
             
+            # Clickable poster image
             if poster_path:
-                st.image(
-                    f"https://image.tmdb.org/t/p/w500{poster_path}",
-                    width=150,
-                    caption=title
+                st.markdown(
+                    f'<div class="poster-container">'
+                    f'<a href="{details_url}" target="_blank">'
+                    f'<img src="https://image.tmdb.org/t/p/w500{poster_path}" width="150" alt="{title}">'
+                    f'</a>'
+                    f'</div>',
+                    unsafe_allow_html=True
                 )
             else:
-                st.image(
-                    "https://via.placeholder.com/150x225?text=No+Poster",
-                    width=150,
-                    caption=title
+                st.markdown(
+                    f'<div class="poster-container">'
+                    f'<a href="{details_url}" target="_blank">'
+                    f'<img src="https://via.placeholder.com/150x225?text=No+Poster" width="150" alt="{title}">'
+                    f'</a>'
+                    f'</div>',
+                    unsafe_allow_html=True
                 )
             
-            # Modified button with unique key using index
+            st.write(title)
+            
+            # Remove button
             if st.button(f"Remove from {content_type}", 
-                        key=f"remove_{content_type}_{item['id']}_{idx}"):  # Added index to key
+                        key=f"remove_{content_type}_{item['id']}_{idx}"):
                 if remove_content(st.session_state.username, content_type, item["id"]):
                     st.success(f"Removed {title} from your {content_type} list!")
                     st.rerun()
