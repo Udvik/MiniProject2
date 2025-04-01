@@ -49,8 +49,16 @@ st.markdown("""
             padding-right: 1rem;
         }
     }
-    .view-more-btn {
-        margin-top: 1rem;
+    .poster-container {
+        position: relative;
+        margin-bottom: 8px;
+    }
+    .poster-container img {
+        transition: transform 0.2s;
+    }
+    .poster-container img:hover {
+        transform: scale(1.03);
+        cursor: pointer;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -155,39 +163,50 @@ else:
 st.markdown("---")
 st.markdown("## 💌 Recommendations")
 
-# Received Recommendations
+# Received Recommendations - showing last 4 recent recommendations
 st.markdown("### Recommendations for You")
 recommendations = get_recommendations(username)
 if recommendations:
+    # Reverse to show most recent first
+    recommendations.reverse()
     cols = st.columns(4)
     for idx, rec in enumerate(recommendations[:4]):
         with cols[idx % 4]:
             poster_path = fetch_poster(rec["media_type"], rec["item_id"])
+            details_url = f"/details?media_type={rec['media_type']}&id={rec['item_id']}"
+            
             if poster_path:
-                st.image(
-                    f"{TMDB_IMAGE_BASE_URL}{poster_path}",
-                    width=150,
-                    caption=f"{rec['title']} (from {rec['from_user']})"
+                st.markdown(
+                    f'<div class="poster-container">'
+                    f'<a href="{details_url}" target="_blank">'
+                    f'<img src="{TMDB_IMAGE_BASE_URL}{poster_path}" width="150" alt="{rec["title"]}">'
+                    f'</a>'
+                    f'</div>',
+                    unsafe_allow_html=True
                 )
             else:
-                st.image(
-                    "https://via.placeholder.com/150x225?text=No+Poster",
-                    width=150,
-                    caption=f"{rec['title']} (from {rec['from_user']})"
+                st.markdown(
+                    f'<div class="poster-container">'
+                    f'<a href="{details_url}" target="_blank">'
+                    f'<img src="https://via.placeholder.com/150x225?text=No+Poster" width="150" alt="{rec["title"]}">'
+                    f'</a>'
+                    f'</div>',
+                    unsafe_allow_html=True
                 )
+            st.caption(f"{rec['title']} (from {rec['from_user']})")
             if st.button("Remove", key=f"remove_rec_{rec['_id']}"):
                 remove_recommendation(rec["_id"])
                 st.rerun()
     
-    # Add "View more" button
-    if st.button("Recommendations Page →", key="view_more_recommendations", use_container_width=True, type="primary"):
+    # View more button styled like other "View All" buttons
+    if st.button("View All Recommendations →", key="view_all_recommendations"):
         st.switch_page("pages/recommendations.py")
 else:
     st.info("No recommendations for you yet")
-    if st.button("View recommendations page →", key="view_recommendations_page", use_container_width=True, type="primary"):
+    if st.button("View Recommendations →", key="view_recommendations"):
         st.switch_page("pages/recommendations.py")
 
-# Existing Watched/Liked Content Sections
+# Watched Content Section with clickable posters
 st.markdown("---")
 st.markdown("## 🎬 Your Watched Content")
 watched_content = get_user_content(username).get("watched", [])
@@ -199,18 +218,27 @@ if watched_content:
     for idx, item in enumerate(watched_content[:4]):
         with cols[idx % 4]:
             poster_path = fetch_poster(item["type"], item["id"])
+            details_url = f"/details?media_type={item['type']}&id={item['id']}"
+            
             if poster_path:
-                st.image(
-                    f"{TMDB_IMAGE_BASE_URL}{poster_path}",
-                    width=150,
-                    caption=item["title"]
+                st.markdown(
+                    f'<div class="poster-container">'
+                    f'<a href="{details_url}" target="_blank">'
+                    f'<img src="{TMDB_IMAGE_BASE_URL}{poster_path}" width="150" alt="{item["title"]}">'
+                    f'</a>'
+                    f'</div>',
+                    unsafe_allow_html=True
                 )
             else:
-                st.image(
-                    "https://via.placeholder.com/150x225?text=No+Poster",
-                    width=150,
-                    caption=item["title"]
+                st.markdown(
+                    f'<div class="poster-container">'
+                    f'<a href="{details_url}" target="_blank">'
+                    f'<img src="https://via.placeholder.com/150x225?text=No+Poster" width="150" alt="{item["title"]}">'
+                    f'</a>'
+                    f'</div>',
+                    unsafe_allow_html=True
                 )
+            st.caption(item["title"])
     if len(watched_content) > 4:
         if st.button("View All Watched →", key="view_all_watched"):
             st.session_state.list_content_type = "watched"
@@ -218,6 +246,7 @@ if watched_content:
 else:
     st.info("You haven't watched anything yet")
 
+# Liked Content Section with clickable posters
 st.markdown("---")
 st.markdown("## ❤️ Your Liked Content")
 
@@ -230,18 +259,27 @@ if liked_content:
     for idx, item in enumerate(liked_content[:4]):
         with cols[idx % 4]:
             poster_path = fetch_poster(item["type"], item["id"])
+            details_url = f"/details?media_type={item['type']}&id={item['id']}"
+            
             if poster_path:
-                st.image(
-                    f"{TMDB_IMAGE_BASE_URL}{poster_path}",
-                    width=150,
-                    caption=item["title"]
+                st.markdown(
+                    f'<div class="poster-container">'
+                    f'<a href="{details_url}" target="_blank">'
+                    f'<img src="{TMDB_IMAGE_BASE_URL}{poster_path}" width="150" alt="{item["title"]}">'
+                    f'</a>'
+                    f'</div>',
+                    unsafe_allow_html=True
                 )
             else:
-                st.image(
-                    "https://via.placeholder.com/150x225?text=No+Poster",
-                    width=150,
-                    caption=item["title"]
+                st.markdown(
+                    f'<div class="poster-container">'
+                    f'<a href="{details_url}" target="_blank">'
+                    f'<img src="https://via.placeholder.com/150x225?text=No+Poster" width="150" alt="{item["title"]}">'
+                    f'</a>'
+                    f'</div>',
+                    unsafe_allow_html=True
                 )
+            st.caption(item["title"])
     if len(liked_content) > 4:
         if st.button("View All Liked →", key="view_all_liked"):
             st.session_state.list_content_type = "liked"
