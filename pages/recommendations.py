@@ -1,10 +1,17 @@
 import streamlit as st
+import requests
+import os
 from db import (
     get_friends,
     get_recommendations,
     add_recommendation,
     remove_recommendation
 )
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 # Set page config
 st.set_page_config(page_title="Recommendations", layout="wide")
@@ -27,6 +34,31 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+def search_tmdb(query, media_type):
+    """Search TMDB for movies or TV shows matching the query"""
+    url = f"https://api.themoviedb.org/3/search/{media_type}"
+    params = {
+        "api_key": TMDB_API_KEY,
+        "query": query,
+        "language": "en-US",
+        "page": 1
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        results = response.json().get("results", [])
+        # Return list of (formatted_title, id) tuples sorted by popularity
+        formatted_results = []
+        for item in sorted(results, key=lambda x: x.get("popularity", 0), reverse=True):
+            if media_type == "movie":
+                year = item.get("release_date", "")[:4] if item.get("release_date") else "Unknown"
+                title = f"{item['title']} ({year})" if year else item['title']
+            else:
+                year = item.get("first_air_date", "")[:4] if item.get("first_air_date") else "Unknown"
+                title = f"{item['name']} ({year})" if year else item['name']
+            formatted_results.append((title, item["id"]))
+        return formatted_results
+    return []
 
 # Authentication Check
 if "logged_in" not in st.session_state or not st.session_state["logged_in"]:
@@ -75,12 +107,41 @@ friends = get_friends(username)
 if friends:
     friend = st.selectbox("Select friend", friends)
     media_type = st.selectbox("Content Type", ["movie", "tv"])
-    item_id = st.text_input("TMDB ID")
-    title = st.text_input("Title")
+    
+    # Title search with autocomplete
+    title_query = st.text_input("Search for title")
+    search_results = []
+    
+    if title_query and len(title_query) > 2:
+        search_results = search_tmdb(title_query, media_type)
+    
+    selected_title = None
+    selected_id = None
+    
+    if search_results:
+        # Create a select box with search results (title with year and ID)
+        options = [f"{title} (ID: {id})" for title, id in search_results]
+        selected_option = st.selectbox("Select from search results", options)
+        
+        if selected_option:
+            # Extract the original title without year for storage
+            original_title = selected_option.split(" (ID: ")[0].split(" (20")[0].split(" (19")[0]
+            selected_title = original_title.strip()
+            selected_id = selected_option.split(" (ID: ")[1][:-1]
+    
+    # Display the selected title and ID (or allow manual entry)
+    col1, col2 = st.columns(2)
+    with col1:
+        title = st.text_input("Title", value=selected_title if selected_title else "")
+    with col2:
+        item_id = st.text_input("TMDB ID", value=selected_id if selected_id else "")
+    
     note = st.text_area("Personal Note (optional)")
     
     if st.button("Send Recommendation"):
-        if add_recommendation(username, friend, media_type, item_id, title, note):
+        if not title or not item_id:
+            st.error("Please select or enter both title and TMDB ID")
+        elif add_recommendation(username, friend, media_type, item_id, title, note):
             st.success("Recommendation sent successfully!")
         else:
             st.error("Failed to send recommendation")

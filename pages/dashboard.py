@@ -7,7 +7,6 @@ from db import (
     get_friend_requests,
     respond_friend_request,
     get_friends,
-    add_recommendation,
     get_recommendations,
     remove_recommendation
 )
@@ -19,18 +18,16 @@ st.set_page_config(page_title="Dashboard", layout="wide")
 API_KEY = os.getenv("TMDB_API_KEY")
 TMDB_IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
-# CSS Styling (keep your existing styles)
+# CSS Styling
 st.markdown("""
 <style>
-    /* Your existing CSS styles here */
-        .main {
+    .main {
         padding-left: 2rem !important;
         padding-right: 2rem !important;
     }
     .st-emotion-cache-1y4p8pa {
         padding: 1rem;
     }
-    /* Ensure padding persists - uses same selector as app.py */
     [data-testid="stAppViewContainer"] > .main {
         padding: 2rem 5rem !important;
     }
@@ -51,6 +48,9 @@ st.markdown("""
             padding-left: 1rem;
             padding-right: 1rem;
         }
+    }
+    .view-more-btn {
+        margin-top: 1rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -178,25 +178,16 @@ if recommendations:
             if st.button("Remove", key=f"remove_rec_{rec['_id']}"):
                 remove_recommendation(rec["_id"])
                 st.rerun()
+    
+    # Add "View more" button
+    if st.button("Recommendations Page →", key="view_more_recommendations", use_container_width=True, type="primary"):
+        st.switch_page("pages/recommendations.py")
 else:
     st.info("No recommendations for you yet")
+    if st.button("View recommendations page →", key="view_recommendations_page", use_container_width=True, type="primary"):
+        st.switch_page("pages/recommendations.py")
 
-# Send Recommendation (only if you have friends)
-if friends:
-    st.markdown("### Send Recommendation")
-    friend_to_rec = st.selectbox("Select friend", friends)
-    media_type = st.selectbox("Media Type", ["movie", "tv"])
-    item_id = st.text_input("Item ID")
-    title = st.text_input("Title")
-    note = st.text_area("Note (optional)")
-    
-    if st.button("Send Recommendation"):
-        if add_recommendation(username, friend_to_rec, media_type, item_id, title, note):
-            st.success("Recommendation sent!")
-        else:
-            st.error("Could not send recommendation")
-
-# Existing Watched/Liked Content Sections (keep your existing code)
+# Existing Watched/Liked Content Sections
 st.markdown("---")
 st.markdown("## 🎬 Your Watched Content")
 watched_content = get_user_content(username).get("watched", [])
