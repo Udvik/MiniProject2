@@ -198,7 +198,7 @@ if friends:
 # Watched Content Section
 st.markdown("---")
 st.markdown("## 🎬 Your Watched Content")
-watched_content = get_user_content(username)["watched"]
+watched_content = get_user_content(username).get("watched", [])
 
 # Loop through the watched content in reverse order (most recent first)
 watched_content.reverse()
@@ -227,10 +227,10 @@ if watched_content:
 else:
     st.info("You haven't watched anything yet")
 
-# Liked Content Section (Similar logic applies here)
+# Liked Content Section
 st.markdown("---")
 st.markdown("## ❤️ Your Liked Content")
-liked_content = get_user_content(username)["liked"]
+liked_content = get_user_content(username).get("liked", [])
 
 # Loop through the liked content in reverse order (most recent first)
 liked_content.reverse()
@@ -258,3 +258,4 @@ if liked_content:
             st.switch_page("pages/list_content.py")
 else:
     st.info("You haven't liked anything yet")
+

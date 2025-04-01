@@ -3,11 +3,11 @@ import requests
 import random
 import streamlit as st
 import os
-import emoji
 from dotenv import load_dotenv
-from db import add_watched_content, add_liked_content, get_user_content  # Ensure this is correctly imported
+import emoji
+from db import add_watched_content, add_liked_content  # Assuming this is the database handler
 
-# Load API Key
+# Load API Key from .env
 load_dotenv()
 API_KEY = os.getenv("TMDB_API_KEY")
 
@@ -15,33 +15,33 @@ if not API_KEY:
     st.error("API Key not found! Make sure to set it in the .env file.")
     st.stop()
 
-# TMDB API URLs
+# TMDB URLs
 TMDB_GENRES_LIST_URL = "https://api.themoviedb.org/3/genre/movie/list"
 TMDB_MOVIES_URL = "https://api.themoviedb.org/3/discover/movie"
-TMDB_TV_URL = "https://api.themoviedb.org/3/discover/tv"
+TMDB_TV_URL = "https://api.themoviedb.org/3/discover/tv"  # URL to fetch TV shows
 
-# 🎭 **Emoji-to-Genre Mapping**
+# Emoji-to-Genre Mapping with Movie and TV Show Genre Names
 EMOJI_TO_GENRE_MOVIES = {
-    ("😀", "😢", "😊", "🤗"): ["Comedy", "Adventure"],
-    ("😡", "🤬"): ["Action", "Thriller"],
-    ("😱", "👻", "🎃"): ["Horror", "Mystery"],
-    ("😮", "🤯"): ["Sci-Fi", "Fantasy"],
-    ("😐", "📜", "🤓"): ["Documentary", "History"],
-    ("❤️", "💔", "🥰"): ["Romance", "Drama"],
-    ("🎶",): ["Music", "Musical"],
+    ("😀", "😢", "😊", "🤗"): ["Comedy", "Adventure"],  # Happy & comforting movies
+    ("😡", "🤬"): ["Action", "Thriller"],  # Angry moods → Action-packed movies
+    ("😱", "👻", "🎃"): ["Horror", "Mystery"],  # Scary moods → Horror films
+    ("😮", "🤯"): ["Sci-Fi", "Fantasy"],  # Mind-blowing, futuristic vibes
+    ("😐", "📜", "🤓"): ["Documentary", "History"],  # Informational movies
+    ("❤️", "💔", "🥰"): ["Romance", "Drama"],  # Love & heartbreak themes
+    ("🎶"): ["Music", "Musical"],  # Music and dance-themed movies
 }
 
 EMOJI_TO_GENRE_TV = {
-    ("😀", "😢", "😊", "🤗"): ["Comedy", "Drama"],
-    ("😡", "🤬"): ["Action & Adventure", "Thriller"],
-    ("😱", "👻", "🎃"): ["Horror", "Mystery"],
-    ("😮", "🤯"): ["Sci-Fi & Fantasy", "Drama"],
-    ("😐", "📜", "🤓"): ["Documentary", "History"],
-    ("❤️", "💔", "🥰"): ["Romance", "Drama"],
-    ("🎶",): ["Music", "Reality"],
+    ("😀", "😢", "😊", "🤗"): ["Comedy", "Drama"],  # Happy & comforting TV shows
+    ("😡", "🤬"): ["Action & Adventure", "Thriller"],  # Angry moods → Action-packed TV shows
+    ("😱", "👻", "🎃"): ["Horror", "Mystery"],  # Scary moods → Horror TV shows
+    ("😮", "🤯"): ["Sci-Fi & Fantasy", "Drama"],  # Mind-blowing, futuristic vibes
+    ("😐", "📜", "🤓"): ["Documentary", "History"],  # Informational TV shows
+    ("❤️", "💔", "🥰"): ["Romance", "Drama"],  # Love & heartbreak themes
+    ("🎶"): ["Music", "Reality"],  # Music and dance-themed TV shows
 }
 
-# 🟢 Fetch TMDB Genre Mapping
+# Fetch TMDB Genre Mapping
 @st.cache_data
 def fetch_genre_mapping():
     response = requests.get(TMDB_GENRES_LIST_URL, params={"api_key": API_KEY})
@@ -52,93 +52,126 @@ def fetch_genre_mapping():
 
 GENRE_MAPPING = fetch_genre_mapping()
 
-# 🟢 Fetch Movies and TV Shows by Genre
-@st.cache_data
+# Fetch Movies and TV Shows by Genre
 def fetch_movies_and_tv_by_genre(genre_ids, content_type="movie"):
-    url = TMDB_MOVIES_URL if content_type == "movie" else TMDB_TV_URL
-    params = {"api_key": API_KEY, "with_genres": ",".join(map(str, genre_ids))}
-    response = requests.get(url, params=params, timeout=10)
-    if response.status_code == 200:
-        return response.json().get("results", [])
-    return []
+    try:
+        if content_type == "movie":
+            url = TMDB_MOVIES_URL
+        elif content_type == "tv":
+            url = TMDB_TV_URL
+        
+        params = {"api_key": API_KEY, "with_genres": ",".join(map(str, genre_ids))}
+        response = requests.get(url, params=params, timeout=10)  # Timeout set to 10 seconds
+        
+        if response.status_code == 200:
+            return response.json().get("results", [])
+        else:
+            st.error(f"Error fetching data from TMDB API (Status code: {response.status_code}).")
+            return []
+    except requests.exceptions.RequestException as e:
+        st.error(f"Request failed: {e}")
+        return []
 
-# 🟢 Streamlit UI
+# Streamlit UI
 st.title("🎬 Emoji-Based Movie & TV Show Recommendation")
 
-# 🟢 Ensure User Session
-if "username" not in st.session_state:
-    st.session_state.username = None
+selected_emoji = st.selectbox("Select your current mood:", list(emoji for emojis in EMOJI_TO_GENRE_MOVIES.keys() for emoji in emojis))
 
-if st.session_state.username is None:
-    st.warning("Please log in to save watched/liked movies!")
-else:
-    st.success(f"Logged in as {st.session_state.username}")
+if selected_emoji:
+    st.write(f"**Detected Emotion:** {emoji.demojize(selected_emoji).replace(':', '').capitalize()}")
 
-# Select Emoji Mood
-selected_emoji = st.selectbox("Select your current mood:", 
-    list(emoji for emojis in EMOJI_TO_GENRE_MOVIES.keys() for emoji in emojis))
-
-# 🟢 Fetch Movies & TV Shows based on Emoji
-if "last_selected_emoji" not in st.session_state:
-    st.session_state.last_selected_emoji = None
-    st.session_state.movies = []
-    st.session_state.tv_shows = []
-
-if selected_emoji and selected_emoji != st.session_state.last_selected_emoji:
-    st.session_state.last_selected_emoji = selected_emoji
+    # Find the genre list based on emoji selection
     movie_genres = next((genres for key, genres in EMOJI_TO_GENRE_MOVIES.items() if selected_emoji in key), [])
     tv_genres = next((genres for key, genres in EMOJI_TO_GENRE_TV.items() if selected_emoji in key), [])
-    movie_genre_ids = [GENRE_MAPPING[genre] for genre in movie_genres if genre in GENRE_MAPPING]
-    tv_genre_ids = [GENRE_MAPPING[genre] for genre in tv_genres if genre in GENRE_MAPPING]
-    st.session_state.movies = fetch_movies_and_tv_by_genre(movie_genre_ids, content_type="movie")
-    st.session_state.tv_shows = fetch_movies_and_tv_by_genre(tv_genre_ids, content_type="tv")
 
-# 🟢 Display Movies
-st.subheader("🎥 Recommended Movies")
-for movie in st.session_state.movies[:10]:
-    title = movie.get("title", "Unknown")
-    item_id = movie.get("id")
+    if movie_genres or tv_genres:
+        movie_genre_ids = [GENRE_MAPPING[genre] for genre in movie_genres if genre in GENRE_MAPPING]
+        tv_genre_ids = [GENRE_MAPPING[genre] for genre in tv_genres if genre in GENRE_MAPPING]
 
-    st.write(f"**{title}**")
-    col1, col2 = st.columns(2)
+        # Fetch both movies and TV shows (combining both)
+        movies = fetch_movies_and_tv_by_genre(movie_genre_ids, content_type="movie")
+        tv_shows = fetch_movies_and_tv_by_genre(tv_genre_ids, content_type="tv")
 
-    with col1:
-        if st.button("✅ Watched", key=f"watched_{item_id}"):
-            if st.session_state.username:
-                add_watched_content(st.session_state.username, "movie", item_id, title)
-                st.toast(f"Added {title} to watched list!")
-            else:
-                st.warning("Please log in to track watched content!")
+        if movies or tv_shows:
+            # Randomly select 10 movies and 10 TV shows
+            random_movies = random.sample(movies, min(10, len(movies)))  # 10 random movies
+            random_tv_shows = random.sample(tv_shows, min(10, len(tv_shows)))  # 10 random TV shows
 
-    with col2:
-        if st.button("❤️ Like", key=f"liked_{item_id}"):
-            if st.session_state.username:
-                add_liked_content(st.session_state.username, "movie", item_id, title)
-                st.toast(f"Added {title} to liked list!")
-            else:
-                st.warning("Please log in to track liked content!")
+            # Show Movies Section
+            st.subheader("🎥 Recommended Movies")
+            cols = st.columns(5)  # Display 5 per row for Movies
+            for idx, movie in enumerate(random_movies):  # Show selected random movies
+                title = movie.get("title", "Unknown")
+                poster_path = movie.get("poster_path", "")
+                poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else "https://via.placeholder.com/180x270"
+                item_id = movie.get("id")
+                
+                with cols[idx % 5]:
+                    # Making the image a clickable link
+                    details_url = f"/details?media_type=movie&id={item_id}"
+                    st.markdown(f"[![{title}]({poster_url})]({details_url})", unsafe_allow_html=True)  # This will make the poster clickable
+                    st.write(title)
 
-# 🟢 Display TV Shows
-st.subheader("📺 Recommended TV Shows")
-for tv_show in st.session_state.tv_shows[:10]:
-    title = tv_show.get("name", "Unknown")
-    item_id = tv_show.get("id")
+                    # Add Watched and Liked buttons
+                    if st.session_state.get("logged_in", False):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("✅", key=f"watched_{item_id}_{idx}"):
+                                add_watched_content(
+                                    st.session_state.username,
+                                    "movie",
+                                    item_id,
+                                    title
+                                )
+                                st.success(f"Added {title} to watched list!")
+                        with col2:
+                            if st.button("❤️", key=f"liked_{item_id}_{idx}"):
+                                add_liked_content(
+                                    st.session_state.username,
+                                    "movie",
+                                    item_id,
+                                    title
+                                )
+                                st.success(f"Added {title} to liked list!")
 
-    st.write(f"**{title}**")
-    col1, col2 = st.columns(2)
+            # Show TV Shows Section
+            st.subheader("📺 Recommended TV Shows")
+            cols = st.columns(5)  # Display 5 per row for TV Shows
+            for idx, tv_show in enumerate(random_tv_shows):  # Show selected random TV shows
+                title = tv_show.get("name", "Unknown")
+                poster_path = tv_show.get("poster_path", "")
+                poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else "https://via.placeholder.com/180x270"
+                item_id = tv_show.get("id")
+                
+                with cols[idx % 5]:
+                    # Making the image a clickable link
+                    details_url = f"/details?media_type=tv&id={item_id}"
+                    st.markdown(f"[![{title}]({poster_url})]({details_url})", unsafe_allow_html=True)  # This will make the poster clickable
+                    st.write(title)
 
-    with col1:
-        if st.button("✅ Watched", key=f"watched_tv_{item_id}"):
-            if st.session_state.username:
-                add_watched_content(st.session_state.username, "tv", item_id, title)
-                st.toast(f"Added {title} to watched list!")
-            else:
-                st.warning("Please log in to track watched content!")
+                    # Add Watched and Liked buttons
+                    if st.session_state.get("logged_in", False):
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            if st.button("✅", key=f"watched_{item_id}_{idx}"):
+                                add_watched_content(
+                                    st.session_state.username,
+                                    "tv",
+                                    item_id,
+                                    title
+                                )
+                                st.success(f"Added {title} to watched list!")
+                        with col2:
+                            if st.button("❤️", key=f"liked_{item_id}_{idx}"):
+                                add_liked_content(
+                                    st.session_state.username,
+                                    "tv",
+                                    item_id,
+                                    title
+                                )
+                                st.success(f"Added {title} to liked list!")
 
-    with col2:
-        if st.button("❤️ Like", key=f"liked_tv_{item_id}"):
-            if st.session_state.username:
-                add_liked_content(st.session_state.username, "tv", item_id, title)
-                st.toast(f"Added {title} to liked list!")
-            else:
-                st.warning("Please log in to track liked content!")
+        else:
+            st.write("❌ Sorry, no recommendations found.")
+    else:
+        st.write("❌ No matching genres found for this emoji.")
