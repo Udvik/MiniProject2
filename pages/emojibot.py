@@ -1,5 +1,7 @@
-import streamlit as st
+import time
 import requests
+import random
+import streamlit as st
 import os
 from dotenv import load_dotenv
 import emoji
@@ -38,12 +40,21 @@ def fetch_genre_mapping():
 
 GENRE_MAPPING = fetch_genre_mapping()
 
-# Fetch Movies by Genre
+# Fetch Movies by Genre (Simplified Version)
 def fetch_movies_by_genre(genre_ids):
-    url = TMDB_MOVIES_URL
-    params = {"api_key": API_KEY, "with_genres": ",".join(map(str, genre_ids))}
-    response = requests.get(url, params=params)
-    return response.json().get("results", []) if response.status_code == 200 else []
+    try:
+        url = TMDB_MOVIES_URL
+        params = {"api_key": API_KEY, "with_genres": ",".join(map(str, genre_ids))}
+        response = requests.get(url, params=params, timeout=10)  # Timeout set to 10 seconds
+        
+        if response.status_code == 200:
+            return response.json().get("results", [])
+        else:
+            st.error(f"Error fetching data from TMDB API (Status code: {response.status_code}).")
+            return []
+    except requests.exceptions.RequestException as e:
+        st.error(f"Request failed: {e}")
+        return []
 
 # Streamlit UI
 st.title("🎬 Emoji-Based Movie Recommendation")
@@ -63,9 +74,12 @@ if selected_emoji:
             movies = fetch_movies_by_genre(genre_ids)
 
             if movies:
+                # Randomly select 15 movies from the list
+                random_movies = random.sample(movies, min(15, len(movies)))  # 15 random movies
+                
                 st.subheader("🎥 Recommended Movies")
                 cols = st.columns(5)  # Display 5 movies per row
-                for idx, movie in enumerate(movies[:15]):  # Show top 15 movies
+                for idx, movie in enumerate(random_movies):  # Show selected random movies
                     title = movie.get("title", "Unknown")
                     poster_path = movie.get("poster_path", "")
                     poster_url = f"https://image.tmdb.org/t/p/w500{poster_path}" if poster_path else "https://via.placeholder.com/180x270"
