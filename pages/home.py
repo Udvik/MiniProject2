@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import os
-from db import add_watched_content, add_liked_content
+from db import add_watched_content, add_liked_content, get_friends, get_user_content
 
 # Add this at the top of home.py (right after imports)
 st.markdown("""
@@ -67,8 +67,55 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Function Definitions FIRST ---
-def display_content(items, media_type):
+def get_friends_activity(username, limit=8):
+    """Get recently watched items from friends"""
+    friends = get_friends(username)
+    all_watched = []
+    
+    for friend in friends:
+        friend_content = get_user_content(friend)
+        for item in friend_content.get("watched", []):
+            item["friend_username"] = friend
+            all_watched.append(item)
+    
+    # Sort by date added (newest first)
+    all_watched.sort(key=lambda x: x.get("added_at", ""), reverse=True)
+    return all_watched[:limit]
+
+def get_popular_with_friends(username):
+    """Get items most frequently watched by friends with high ratings"""
+    friends = get_friends(username)
+    content_counts = {}
+    
+    for friend in friends:
+        friend_content = get_user_content(friend)
+        for item in friend_content.get("watched", []):
+            key = (item["type"], item["id"], item["title"])
+            if key not in content_counts:
+                content_counts[key] = {
+                    "count": 0,
+                    "friend_usernames": []
+                }
+            content_counts[key]["count"] += 1
+            content_counts[key]["friend_usernames"].append(friend)
+    
+    # Sort by watch count (descending)
+    sorted_items = sorted(content_counts.items(), key=lambda x: x[1]["count"], reverse=True)
+    
+    # Convert to list of items with metadata
+    result = []
+    for (media_type, item_id, title), data in sorted_items[:8]:
+        result.append({
+            "type": media_type,
+            "id": item_id,
+            "title": title,
+            "watch_count": data["count"],
+            "friends": data["friend_usernames"]
+        })
+    
+    return result
+
+def display_content(items, media_type, caption_field="title"):
     cols = st.columns(4)
     for i, item in enumerate(items[:8]):
         with cols[i % 4]:
@@ -122,9 +169,16 @@ def display_content(items, media_type):
                         )
                         st.success(f"Added {title} to liked list!")
             
-            st.caption(title)
+            st.caption(item.get(caption_field, title))
 
-# Rest of your existing functions remain exactly the same...
+def fetch_poster(media_type, item_id):
+    API_KEY = os.getenv("TMDB_API_KEY")
+    url = f"https://api.themoviedb.org/3/{media_type}/{item_id}"
+    response = requests.get(url, params={"api_key": API_KEY})
+    if response.status_code == 200:
+        return response.json().get("poster_path")
+    return None
+
 def fetch_popular_movies():
     API_KEY = os.getenv("TMDB_API_KEY")
     url = f"https://api.themoviedb.org/3/movie/popular?api_key={API_KEY}"
@@ -144,7 +198,7 @@ def search_content(query):
     response = requests.get(url, params=params)
     return response.json().get("results", []) if response.status_code == 200 else []
 
-# --- Streamlit UI Code AFTER functions ---
+# --- Streamlit UI Code ---
 st.title("🎬 Entertainment Explorer")
 
 query = st.text_input("🔍 Search for movies or TV shows...")
@@ -169,3 +223,80 @@ else:
     st.subheader("Popular TV Shows")
     tv_shows = fetch_popular_tv()
     display_content(tv_shows, "tv")
+
+    # New Friends Activity Sections (only shown when logged in)
+    if st.session_state.get("logged_in", False):
+        # New from Friends section
+        st.subheader("New from Friends")
+        friends_activity = get_friends_activity(st.session_state.username)
+        
+        if friends_activity:
+            # Enhance items with poster paths
+            for item in friends_activity:
+                item["poster_path"] = fetch_poster(item["type"], item["id"])
+            
+            cols = st.columns(4)
+            for idx, item in enumerate(friends_activity[:8]):
+                with cols[idx % 4]:
+                    poster_path = item.get("poster_path")
+                    details_url = f"/details?media_type={item['type']}&id={item['id']}"
+                    
+                    if poster_path:
+                        st.markdown(
+                            f'<div class="poster-container">'
+                            f'<a href="{details_url}" target="_blank">'
+                            f'<img src="https://image.tmdb.org/t/p/w500{poster_path}" '
+                            f'style="width:100%; height:auto; aspect-ratio:2/3; object-fit:cover; border-radius:8px;">'
+                            f'</a>'
+                            f'</div>',
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.markdown(
+                            '<div style="width:100%; aspect-ratio:2/3; background:#eee; border-radius:8px; display:flex; '
+                            'align-items:center; justify-content:center; margin-bottom:8px;">'
+                            '<span style="color:#666;">No Image</span></div>',
+                            unsafe_allow_html=True
+                        )
+                    
+                    st.caption(f"Watched by {item['friend_username']}")
+        else:
+            st.info("Your friends haven't watched anything yet")
+
+        # Popular with Friends section
+        st.subheader("Popular with Friends")
+        popular_with_friends = get_popular_with_friends(st.session_state.username)
+        
+        if popular_with_friends:
+            # Enhance items with poster paths
+            for item in popular_with_friends:
+                item["poster_path"] = fetch_poster(item["type"], item["id"])
+                item["friends_count"] = f"{item['watch_count']} friends watched"
+            
+            cols = st.columns(4)
+            for idx, item in enumerate(popular_with_friends[:8]):
+                with cols[idx % 4]:
+                    poster_path = item.get("poster_path")
+                    details_url = f"/details?media_type={item['type']}&id={item['id']}"
+                    
+                    if poster_path:
+                        st.markdown(
+                            f'<div class="poster-container">'
+                            f'<a href="{details_url}" target="_blank">'
+                            f'<img src="https://image.tmdb.org/t/p/w500{poster_path}" '
+                            f'style="width:100%; height:auto; aspect-ratio:2/3; object-fit:cover; border-radius:8px;">'
+                            f'</a>'
+                            f'</div>',
+                            unsafe_allow_html=True
+                        )
+                    else:
+                        st.markdown(
+                            '<div style="width:100%; aspect-ratio:2/3; background:#eee; border-radius:8px; display:flex; '
+                            'align-items:center; justify-content:center; margin-bottom:8px;">'
+                            '<span style="color:#666;">No Image</span></div>',
+                            unsafe_allow_html=True
+                        )
+                    
+                    st.caption(f"{item['title']} ({item['friends_count']})")
+        else:
+            st.info("No popular content among your friends yet")
