@@ -159,11 +159,18 @@ if friends:
 else:
     st.info("You haven't added any friends yet")
 
-# New Collections Section
+
 st.markdown("---")
 st.markdown("## 📚 Your Collections")
 if st.button("View All Collections →", key="view_all_collections"):
     st.switch_page("pages/history.py")
+
+
+st.markdown("---")
+st.markdown("## 🔍 Explore Recommendations")
+st.markdown("Discover new content based on your preferences")
+if st.button("Explore Now →", key="explore_now"):
+    st.switch_page("pages/explore.py")
 
 # Recommendations Section
 st.markdown("---")
