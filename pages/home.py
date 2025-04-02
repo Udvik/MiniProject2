@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import os
 from db import add_watched_content, add_liked_content, get_friends, get_user_content
+from datetime import datetime
 
 # Add this at the top of home.py (right after imports)
 st.markdown("""
@@ -75,11 +76,20 @@ def get_friends_activity(username, limit=8):
     for friend in friends:
         friend_content = get_user_content(friend)
         for item in friend_content.get("watched", []):
+            # Ensure added_at is datetime object
+            if isinstance(item.get("added_at"), str):
+                try:
+                    item["added_at"] = datetime.fromisoformat(item["added_at"])
+                except ValueError:
+                    item["added_at"] = datetime.min  # Fallback to minimum date if parsing fails
+            elif not isinstance(item.get("added_at"), datetime):
+                item["added_at"] = datetime.min  # Fallback if not datetime
+            
             item["friend_username"] = friend
             all_watched.append(item)
     
-    # Sort by date added (newest first)
-    all_watched.sort(key=lambda x: x.get("added_at", ""), reverse=True)
+    # Sort by datetime object (newest first)
+    all_watched.sort(key=lambda x: x.get("added_at", datetime.min), reverse=True)
     return all_watched[:limit]
 
 def get_popular_with_friends(username):
