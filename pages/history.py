@@ -46,14 +46,29 @@ watched_content.reverse()
 liked_content.reverse()
 recommendations.reverse()
 
-# Display Watched Content with clickable posters
-st.markdown("## 🎬 Watched Content")
-if watched_content:
+# Function to display content with expand/shrink option
+def display_content_section(title, icon, content, content_type="watched"):
+    st.markdown(f"## {icon} {title}")
+    
+    if not content:
+        st.info(f"You haven't {title.lower()} anything yet.")
+        return
+    
+    # Initialize session state for expanded view if not exists
+    if f"show_all_{content_type}" not in st.session_state:
+        st.session_state[f"show_all_{content_type}"] = False
+    
+    # Determine how many items to show
+    show_all = st.session_state[f"show_all_{content_type}"]
+    items_to_show = content if show_all else content[:8]
+    
+    # Display content
     cols = st.columns(4)
-    for idx, item in enumerate(watched_content):
+    for idx, item in enumerate(items_to_show):
         with cols[idx % 4]:
-            poster_path = fetch_poster(item["type"], item["id"])
-            details_url = f"/details?media_type={item['type']}&id={item['id']}"
+            poster_path = fetch_poster(item["type"] if content_type != "recommendations" else item["media_type"], 
+                                    item["id"] if content_type != "recommendations" else item["item_id"])
+            details_url = f"/details?media_type={item['type'] if content_type != 'recommendations' else item['media_type']}&id={item['id'] if content_type != 'recommendations' else item['item_id']}"
             
             if poster_path:
                 st.markdown(
@@ -69,63 +84,27 @@ if watched_content:
                     f'</a>',
                     unsafe_allow_html=True
                 )
-            st.caption(item["title"])
-else:
-    st.info("You haven't watched anything yet.")
+            
+            if content_type == "recommendations":
+                st.caption(f"{item['title']} (from {item['from_user']})")
+            else:
+                st.caption(item["title"])
+    
+    # Show expand/shrink button if there are more than 8 items
+    if len(content) > 8:
+        if st.button("Show All" if not show_all else "Show Less", 
+                    key=f"toggle_{content_type}"):
+            st.session_state[f"show_all_{content_type}"] = not st.session_state[f"show_all_{content_type}"]
+            st.rerun()
 
-# Display Liked Content with clickable posters
-st.markdown("## ❤️ Liked Content")
-if liked_content:
-    cols = st.columns(4)
-    for idx, item in enumerate(liked_content):
-        with cols[idx % 4]:
-            poster_path = fetch_poster(item["type"], item["id"])
-            details_url = f"/details?media_type={item['type']}&id={item['id']}"
-            
-            if poster_path:
-                st.markdown(
-                    f'<a href="{details_url}" target="_blank">'
-                    f'<img src="{TMDB_IMAGE_BASE_URL}{poster_path}" width="150" style="border-radius:8px;margin-bottom:8px;">'
-                    f'</a>',
-                    unsafe_allow_html=True
-                )
-            else:
-                st.markdown(
-                    f'<a href="{details_url}" target="_blank">'
-                    f'<img src="https://via.placeholder.com/150x225?text=No+Poster" width="150" style="border-radius:8px;margin-bottom:8px;">'
-                    f'</a>',
-                    unsafe_allow_html=True
-                )
-            st.caption(item["title"])
-else:
-    st.info("You haven't liked anything yet.")
+# Display Watched Content
+display_content_section("Watched Content", "🎬", watched_content, "watched")
 
-# Display Recommendations with clickable posters
-st.markdown("## 💌 Recommendations")
-if recommendations:
-    cols = st.columns(4)
-    for idx, rec in enumerate(recommendations):
-        with cols[idx % 4]:
-            poster_path = fetch_poster(rec["media_type"], rec["item_id"])
-            details_url = f"/details?media_type={rec['media_type']}&id={rec['item_id']}"
-            
-            if poster_path:
-                st.markdown(
-                    f'<a href="{details_url}" target="_blank">'
-                    f'<img src="{TMDB_IMAGE_BASE_URL}{poster_path}" width="150" style="border-radius:8px;margin-bottom:8px;">'
-                    f'</a>',
-                    unsafe_allow_html=True
-                )
-            else:
-                st.markdown(
-                    f'<a href="{details_url}" target="_blank">'
-                    f'<img src="https://via.placeholder.com/150x225?text=No+Poster" width="150" style="border-radius:8px;margin-bottom:8px;">'
-                    f'</a>',
-                    unsafe_allow_html=True
-                )
-            st.caption(f"{rec['title']} (from {rec['from_user']})")
-else:
-    st.info("No recommendations for you yet.")
+# Display Liked Content
+display_content_section("Liked Content", "❤️", liked_content, "liked")
+
+# Display Recommendations
+display_content_section("Recommendations", "💌", recommendations, "recommendations")
 
 if st.button("← Back to Dashboard"):
     st.switch_page("pages/dashboard.py")
