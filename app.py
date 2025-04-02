@@ -56,6 +56,47 @@ st.markdown("""
     .st-emotion-cache-16txtl3 {
         padding: 1rem !important;
     }
+     /* ===== OVERRIDE STREAMLIT'S MOBILE DEFAULTS ===== */
+    /* Disable automatic column stacking */
+    @media (max-width: 768px) {
+        .stHorizontal > div {
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+        }
+        
+        /* Force 4-column grid */
+        .poster-grid-container {
+            display: grid !important;
+            grid-template-columns: repeat(4, minmax(60px, 1fr)) !important;
+            gap: 8px !important;
+            width: 100% !important;
+        }
+        
+        /* Prevent container padding from shrinking grid */
+        [data-testid="stAppViewContainer"] > .main {
+            padding: 1rem 0.5rem !important;
+            min-width: 280px !important; /* Minimum for 4x60px + gaps */
+        }
+        
+        /* Poster sizing */
+        .poster-item {
+            width: 22vw !important;
+            min-width: 60px !important;
+            max-width: 80px !important;
+        }
+    }
+    
+    /* ===== DESKTOP ENHANCEMENTS ===== */
+    @media (min-width: 769px) {
+        .poster-grid-container {
+            grid-template-columns: repeat(4, minmax(120px, 1fr)) !important;
+            gap: 12px !important;
+        }
+        .poster-item {
+            max-width: 150px !important;
+        }
+    }
 </style>
 """, unsafe_allow_html=True)
 

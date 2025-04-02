@@ -65,6 +65,43 @@ st.markdown("""
         position: relative;
         margin-bottom: 8px;
     }
+    <style>
+    /* Mobile-first responsive base */
+    :root {
+        --poster-width: 22vw;
+        --poster-max-width: 150px;
+        --poster-min-width: 80px;
+    }
+    
+    @media (max-width: 768px) {
+        :root {
+            --poster-width: 22vw;
+            --poster-max-width: 120px;
+        }
+    }
+    
+    /* Grid system that maintains 4 columns */
+    .poster-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(var(--poster-min-width), 1fr));
+        gap: 12px;
+    }
+    
+    /* Poster styling */
+    .poster-container img {
+        width: 100%;
+        max-width: var(--poster-max-width);
+        height: auto;
+        aspect-ratio: 2/3;
+    }
+    
+    /* Buttons */
+    .mobile-button {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 8px 12px;
+    }
+</style>
 </style>
 """, unsafe_allow_html=True)
 
