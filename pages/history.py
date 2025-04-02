@@ -1,7 +1,7 @@
 import streamlit as st
 import requests
 import os
-from db import get_user_content, get_recommendations
+from db import get_user_content, get_recommendations, remove_content, remove_recommendation
 
 # Set page config
 st.set_page_config(page_title="History", layout="wide")
@@ -87,8 +87,18 @@ def display_content_section(title, icon, content, content_type="watched"):
             
             if content_type == "recommendations":
                 st.caption(f"{item['title']} (from {item['from_user']})")
+                # Remove recommendation button
+                if st.button("Remove", key=f"remove_rec_{item['_id']}_{idx}"):
+                    if remove_recommendation(item["_id"]):
+                        st.success(f"Removed recommendation: {item['title']}")
+                        st.rerun()
             else:
                 st.caption(item["title"])
+                # Remove from watched/liked button
+                if st.button("Remove", key=f"remove_{content_type}_{item['id']}_{idx}"):
+                    if remove_content(username, content_type, item["id"]):
+                        st.success(f"Removed from {content_type}: {item['title']}")
+                        st.rerun()
     
     # Show expand/shrink button if there are more than 8 items
     if len(content) > 8:
