@@ -41,10 +41,6 @@ st.markdown("""
         transform: scale(1.03);
         cursor: pointer;
     }
-    .stButton>button {
-        background-color: #4CAF50;
-        color: white;
-    }
 </style>
 """, unsafe_allow_html=True)
 
