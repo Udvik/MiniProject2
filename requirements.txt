@@ -6,3 +6,5 @@ bcrypt
 tensorflow>=2.6.0
 numpy
 pandas
+streamlit-option-menu
+emoji
