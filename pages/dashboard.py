@@ -302,3 +302,5 @@ else:
 
 if st.button("← Back to Home"):
     st.switch_page("pages/home.py")
+
+#for dashboard
